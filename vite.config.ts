@@ -3,7 +3,11 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
+// Servi depuis https://<user>.github.io/mici/ (GitHub Pages, projet non racine).
+const base = process.env.GITHUB_PAGES ? "/mici/" : "/";
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -18,8 +22,8 @@ export default defineConfig({
         background_color: "#f4f7f6",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/",
-        scope: "/",
+        start_url: base,
+        scope: base,
         lang: "fr",
         icons: [
           { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
