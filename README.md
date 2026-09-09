@@ -24,10 +24,19 @@ Les données de santé sont sensibles. Ce prototype adopte donc une approche
   reverrouille automatiquement après une période d'inactivité configurable
   (réglages).
 - Sans le code PIN, les données stockées sont illisibles (bruit chiffré).
+- **Anti brute-force** : après 5 codes PIN incorrects consécutifs, la saisie
+  est bloquée un moment, avec un délai qui double à chaque nouvel échec (30 s,
+  1 min, 2 min, … jusqu'à 30 min). Un essai correct réinitialise le compteur.
+  Cela rend impraticable un brute-force via l'écran de verrouillage.
 
 Limites à connaître pour un usage réel (au-delà du prototype) :
 - Le code PIN est le seul facteur de protection ; s'il est deviné/observé, les
   données sont accessibles. Pas de biométrie dans ce prototype.
+- Le blocage anti brute-force protège l'écran de verrouillage de l'app, mais
+  pas une extraction directe du stockage du navigateur (IndexedDB) par un
+  attaquant ayant un accès technique avancé à l'appareil déverrouillé (ex.
+  outils de développement, appareil rooté/jailbreaké) : dans ce cas, la
+  robustesse dépend uniquement de la force du code PIN et du coût du PBKDF2.
 - Il n'y a pas de sauvegarde/synchronisation : désinstaller l'app ou vider les
   données du navigateur supprime définitivement le carnet.
 - Les rappels utilisent l'API de notifications locale du navigateur ; leur

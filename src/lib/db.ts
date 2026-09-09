@@ -8,6 +8,8 @@ export interface AuthConfig {
   salt: string;
   verifierHash: string;
   autoLockMinutes: number;
+  failedAttempts: number;
+  lockedUntil: string | null; // ISO datetime, null if not locked out
 }
 
 interface StoredDocument {
