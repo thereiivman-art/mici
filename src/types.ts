@@ -5,9 +5,20 @@ export interface MedicationEntry {
   takenAt: string; // ISO datetime
   medName: string;
   dose: string;
+  injectionSite: string; // zone de prise (injection), optionnel
   comment: string;
   createdAt: string;
 }
+
+export const INJECTION_SITE_SUGGESTIONS = [
+  "Ventre",
+  "Cuisse gauche",
+  "Cuisse droite",
+  "Bras gauche",
+  "Bras droit",
+  "Fessier gauche",
+  "Fessier droit",
+];
 
 export interface Reminder {
   id: string;

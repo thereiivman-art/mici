@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useDocuments } from "../hooks/useDocuments";
 import { DOCUMENT_LABELS, type DocumentCategory, type DocumentMeta } from "../types";
 import { Sheet } from "./Sheet";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { TrashIcon, DownloadIcon, FolderIcon } from "./Icons";
 
 function formatDate(dateISO: string): string {
@@ -95,7 +96,7 @@ function DocumentRow({
 }: {
   doc: DocumentMeta;
   onOpen: (d: DocumentMeta) => void;
-  onDelete: (id: string) => void;
+  onDelete: (d: DocumentMeta) => void;
 }) {
   return (
     <div className="list-item">
@@ -113,7 +114,7 @@ function DocumentRow({
         <button className="icon-btn" onClick={() => onOpen(doc)} aria-label="Ouvrir">
           <DownloadIcon />
         </button>
-        <button className="icon-btn" onClick={() => onDelete(doc.id)} aria-label="Supprimer">
+        <button className="icon-btn" onClick={() => onDelete(doc)} aria-label="Supprimer">
           <TrashIcon />
         </button>
       </div>
@@ -125,6 +126,7 @@ export function DocumentsScreen() {
   const { documents, loading, addDocument, removeDocument, openDocument } = useDocuments();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<DocumentCategory | "all">("all");
+  const [pendingDelete, setPendingDelete] = useState<DocumentMeta | null>(null);
 
   const handleOpen = async (doc: DocumentMeta) => {
     const url = await openDocument(doc);
@@ -132,6 +134,12 @@ export function DocumentsScreen() {
       window.open(url, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     }
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    await removeDocument(pendingDelete.id);
+    setPendingDelete(null);
   };
 
   const filtered = filter === "all" ? documents : documents.filter((d) => d.category === filter);
@@ -173,7 +181,7 @@ export function DocumentsScreen() {
       {filtered.length > 0 && (
         <div className="card">
           {filtered.map((d) => (
-            <DocumentRow key={d.id} doc={d} onOpen={handleOpen} onDelete={removeDocument} />
+            <DocumentRow key={d.id} doc={d} onOpen={handleOpen} onDelete={setPendingDelete} />
           ))}
         </div>
       )}
@@ -186,6 +194,15 @@ export function DocumentsScreen() {
         <Sheet title="Nouveau document" onClose={() => setOpen(false)}>
           <AddDocumentForm onAdd={addDocument} onClose={() => setOpen(false)} />
         </Sheet>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Supprimer ce document ?"
+          message={`${pendingDelete.name} — cette action est irréversible.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   );

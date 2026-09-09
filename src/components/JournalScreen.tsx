@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMedications } from "../hooks/useMedications";
-import type { MedicationEntry } from "../types";
+import { INJECTION_SITE_SUGGESTIONS, type MedicationEntry } from "../types";
 import { Sheet } from "./Sheet";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { TrashIcon } from "./Icons";
 
 function nowLocalDatetime(): string {
@@ -31,6 +32,7 @@ function AddMedicationForm({
 }) {
   const [medName, setMedName] = useState("");
   const [dose, setDose] = useState("");
+  const [injectionSite, setInjectionSite] = useState("");
   const [takenAt, setTakenAt] = useState(nowLocalDatetime());
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
@@ -41,6 +43,7 @@ function AddMedicationForm({
     await onAdd({
       medName: medName.trim(),
       dose: dose.trim(),
+      injectionSite: injectionSite.trim(),
       takenAt: new Date(takenAt).toISOString(),
       comment: comment.trim(),
     });
@@ -74,6 +77,20 @@ function AddMedicationForm({
         </div>
       </div>
       <div className="field">
+        <label>Zone de prise (optionnel)</label>
+        <input
+          list="injection-sites"
+          value={injectionSite}
+          onChange={(e) => setInjectionSite(e.target.value)}
+          placeholder="ex. Ventre, cuisse gauche…"
+        />
+        <datalist id="injection-sites">
+          {INJECTION_SITE_SUGGESTIONS.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+      </div>
+      <div className="field">
         <label>Commentaire (optionnel)</label>
         <textarea
           value={comment}
@@ -91,6 +108,13 @@ function AddMedicationForm({
 export function JournalScreen() {
   const { entries, loading, addEntry, removeEntry } = useMedications();
   const [open, setOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<MedicationEntry | null>(null);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    await removeEntry(pendingDelete.id);
+    setPendingDelete(null);
+  };
 
   return (
     <div className="screen">
@@ -114,10 +138,15 @@ export function JournalScreen() {
                 <div className="muted">
                   {formatTakenAt(e.takenAt)}
                   {e.dose ? ` · ${e.dose}` : ""}
+                  {e.injectionSite ? ` · ${e.injectionSite}` : ""}
                 </div>
                 {e.comment && <div style={{ marginTop: 4 }}>{e.comment}</div>}
               </div>
-              <button className="icon-btn" onClick={() => removeEntry(e.id)} aria-label="Supprimer">
+              <button
+                className="icon-btn"
+                onClick={() => setPendingDelete(e)}
+                aria-label="Supprimer"
+              >
                 <TrashIcon />
               </button>
             </div>
@@ -133,6 +162,15 @@ export function JournalScreen() {
         <Sheet title="Nouvelle prise" onClose={() => setOpen(false)}>
           <AddMedicationForm onAdd={addEntry} onClose={() => setOpen(false)} />
         </Sheet>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Supprimer cette prise ?"
+          message={`${pendingDelete.medName} · ${formatTakenAt(pendingDelete.takenAt)} — cette action est irréversible.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   );

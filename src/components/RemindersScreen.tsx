@@ -4,6 +4,7 @@ import { useReminderNotifications } from "../hooks/useReminderNotifications";
 import { requestPermission, isSupported, isOverdue, isDueSoon } from "../lib/notifications";
 import { REMINDER_LABELS, type Reminder, type ReminderType } from "../types";
 import { Sheet } from "./Sheet";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { TrashIcon, CheckIcon, BellIcon } from "./Icons";
 
 function todayISO(): string {
@@ -97,10 +98,17 @@ export function RemindersScreen() {
   const { reminders, loading, addReminder, toggleDone, removeReminder, markNotified } =
     useReminders();
   const [open, setOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Reminder | null>(null);
   useReminderNotifications(reminders, markNotified);
 
   const active = reminders.filter((r) => !r.done);
   const done = reminders.filter((r) => r.done && !r.repeatDays);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    await removeReminder(pendingDelete.id);
+    setPendingDelete(null);
+  };
 
   const notifPermission = isSupported() ? Notification.permission : "unsupported";
 
@@ -154,7 +162,7 @@ export function RemindersScreen() {
                 <button className="icon-btn" onClick={() => toggleDone(r)} aria-label="Marquer comme fait">
                   <CheckIcon />
                 </button>
-                <button className="icon-btn" onClick={() => removeReminder(r.id)} aria-label="Supprimer">
+                <button className="icon-btn" onClick={() => setPendingDelete(r)} aria-label="Supprimer">
                   <TrashIcon />
                 </button>
               </div>
@@ -187,6 +195,15 @@ export function RemindersScreen() {
         <Sheet title="Nouveau rappel" onClose={() => setOpen(false)}>
           <AddReminderForm onAdd={addReminder} onClose={() => setOpen(false)} />
         </Sheet>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Supprimer ce rappel ?"
+          message={`${pendingDelete.title} — cette action est irréversible.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   );
