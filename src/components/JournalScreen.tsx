@@ -103,31 +103,20 @@ function MedicationForm({
       <div className="field">
         <label>Zone de prise (optionnel)</label>
         {canAlternate && (
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontWeight: 400,
-              fontSize: "0.9rem",
-              marginBottom: 8,
-            }}
-          >
+          <label className="alternate-toggle">
             <input
               type="checkbox"
               checked={alternate}
               onChange={(e) => handleAlternateToggle(e.target.checked)}
             />
-            Alterner les zones de prise (gauche / droite)
+            <span>Alterner les zones de prise (gauche / droite)</span>
           </label>
         )}
         {canAlternate && alternate && (
-          <div
-            className="banner"
-            style={{ background: "var(--ok-bg)", color: "var(--primary-strong)", marginBottom: 8 }}
-          >
-            Dernière prise : <strong>{lastInjectionSite}</strong> → Prochaine prise :{" "}
-            <strong>{suggestedSite}</strong>
+          <div className="site-preview">
+            Dernière prise : <strong>{lastInjectionSite}</strong>
+            <br />
+            Prochaine prise : <strong>{suggestedSite}</strong>
           </div>
         )}
         <input

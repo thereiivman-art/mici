@@ -411,3 +411,31 @@ p {
   font-size: 0.85rem;
   margin-bottom: 12px;
 }
+
+.alternate-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 400;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.alternate-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--primary);
+}
+
+.site-preview {
+  background: var(--ok-bg);
+  color: var(--primary-strong);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}

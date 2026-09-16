@@ -58,6 +58,7 @@ export function DashboardScreen({ onNavigate }: { onNavigate: (tab: Tab) => void
             <div className="muted">
               {formatTakenAt(lastEntry.takenAt)}
               {lastEntry.dose ? ` · ${lastEntry.dose}` : ""}
+              {lastEntry.injectionSite ? ` · ${lastEntry.injectionSite}` : ""}
             </div>
           </div>
         ) : (
