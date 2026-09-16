@@ -66,6 +66,18 @@ export function useReminders() {
     [save],
   );
 
+  const updateReminder = useCallback(
+    async (
+      id: string,
+      changes: Omit<Reminder, "id" | "createdAt" | "done" | "lastNotifiedFor">,
+    ) => {
+      const existing = reminders.find((r) => r.id === id);
+      if (!existing) return;
+      await save({ ...existing, ...changes });
+    },
+    [reminders, save],
+  );
+
   const removeReminder = useCallback(
     async (id: string) => {
       await deleteRecord("reminders", id);
@@ -81,5 +93,5 @@ export function useReminders() {
     [save],
   );
 
-  return { reminders, loading, addReminder, toggleDone, removeReminder, markNotified };
+  return { reminders, loading, addReminder, updateReminder, toggleDone, removeReminder, markNotified };
 }

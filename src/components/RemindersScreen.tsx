@@ -5,7 +5,7 @@ import { requestPermission, isSupported, isOverdue, isDueSoon } from "../lib/not
 import { REMINDER_LABELS, type Reminder, type ReminderType } from "../types";
 import { Sheet } from "./Sheet";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { TrashIcon, CheckIcon, BellIcon } from "./Icons";
+import { TrashIcon, CheckIcon, BellIcon, PencilIcon } from "./Icons";
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -19,23 +19,27 @@ function formatDue(dateISO: string): string {
   });
 }
 
-function AddReminderForm({
-  onAdd,
+function ReminderForm({
+  initial,
+  onSubmit,
   onClose,
 }: {
-  onAdd: (r: Omit<Reminder, "id" | "createdAt" | "done" | "lastNotifiedFor">) => Promise<void>;
+  initial?: Reminder;
+  onSubmit: (r: Omit<Reminder, "id" | "createdAt" | "done" | "lastNotifiedFor">) => Promise<void>;
   onClose: () => void;
 }) {
-  const [type, setType] = useState<ReminderType>("pharmacie");
-  const [title, setTitle] = useState("");
-  const [dueDate, setDueDate] = useState(todayISO());
-  const [repeat, setRepeat] = useState<string>("none");
-  const [notes, setNotes] = useState("");
+  const [type, setType] = useState<ReminderType>(initial?.type ?? "pharmacie");
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? todayISO());
+  const [repeat, setRepeat] = useState<string>(
+    initial?.repeatDays ? String(initial.repeatDays) : "none",
+  );
+  const [notes, setNotes] = useState(initial?.notes ?? "");
 
   const submit = async () => {
     if (!title.trim()) return;
     await requestPermission();
-    await onAdd({
+    await onSubmit({
       type,
       title: title.trim(),
       dueDate,
@@ -88,16 +92,17 @@ function AddReminderForm({
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Détails utiles…" />
       </div>
       <button className="btn btn-primary btn-block" disabled={!title.trim()} onClick={submit}>
-        Créer le rappel
+        {initial ? "Enregistrer les modifications" : "Créer le rappel"}
       </button>
     </div>
   );
 }
 
 export function RemindersScreen() {
-  const { reminders, loading, addReminder, toggleDone, removeReminder, markNotified } =
+  const { reminders, loading, addReminder, updateReminder, toggleDone, removeReminder, markNotified } =
     useReminders();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Reminder | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Reminder | null>(null);
   useReminderNotifications(reminders, markNotified);
 
@@ -162,6 +167,9 @@ export function RemindersScreen() {
                 <button className="icon-btn" onClick={() => toggleDone(r)} aria-label="Marquer comme fait">
                   <CheckIcon />
                 </button>
+                <button className="icon-btn" onClick={() => setEditing(r)} aria-label="Modifier">
+                  <PencilIcon />
+                </button>
                 <button className="icon-btn" onClick={() => setPendingDelete(r)} aria-label="Supprimer">
                   <TrashIcon />
                 </button>
@@ -193,7 +201,17 @@ export function RemindersScreen() {
 
       {open && (
         <Sheet title="Nouveau rappel" onClose={() => setOpen(false)}>
-          <AddReminderForm onAdd={addReminder} onClose={() => setOpen(false)} />
+          <ReminderForm onSubmit={addReminder} onClose={() => setOpen(false)} />
+        </Sheet>
+      )}
+
+      {editing && (
+        <Sheet title="Modifier le rappel" onClose={() => setEditing(null)}>
+          <ReminderForm
+            initial={editing}
+            onSubmit={(r) => updateReminder(editing.id, r)}
+            onClose={() => setEditing(null)}
+          />
         </Sheet>
       )}
 
