@@ -53,11 +53,14 @@ Limites à connaître pour un usage réel (au-delà du prototype) :
 
 - **Carnet de prises** : date/heure, médicament, dose, zone de prise
   (injection), commentaire libre. Modifiable et supprimable (avec
-  confirmation) après coup.
+  confirmation) après coup. La zone de prise suivante est suggérée
+  automatiquement en alternant gauche/droite par rapport à la dernière
+  prise enregistrée (ex. cuisse gauche → cuisse droite → cuisse gauche…),
+  toujours modifiable.
 - **Rappels** : pharmacie, rendez-vous médecin, prise de sang, autre — avec
   échéance, récurrence optionnelle, zone de prise prévue pour la prochaine
-  injection, et notifications locales. Modifiables et supprimables (avec
-  confirmation).
+  injection (suggérée par la même rotation), et notifications locales.
+  Modifiables et supprimables (avec confirmation).
 - **Documents** : ajout de photos/PDF (ordonnances, résumés, résultats
   d'analyses) chiffrés, classés par catégorie. Métadonnées (nom, catégorie,
   date, notes) modifiables après coup ; suppression avec confirmation.

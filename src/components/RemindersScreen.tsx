@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useReminders } from "../hooks/useReminders";
+import { useMedications } from "../hooks/useMedications";
 import { useReminderNotifications } from "../hooks/useReminderNotifications";
 import { requestPermission, isSupported, isOverdue, isDueSoon } from "../lib/notifications";
 import { INJECTION_SITE_SUGGESTIONS, REMINDER_LABELS, type Reminder, type ReminderType } from "../types";
+import { nextInjectionSite } from "../lib/injectionRotation";
 import { Sheet } from "./Sheet";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { TrashIcon, CheckIcon, BellIcon, PencilIcon } from "./Icons";
@@ -21,20 +23,23 @@ function formatDue(dateISO: string): string {
 
 function ReminderForm({
   initial,
+  lastInjectionSite,
   onSubmit,
   onClose,
 }: {
   initial?: Reminder;
+  lastInjectionSite?: string;
   onSubmit: (r: Omit<Reminder, "id" | "createdAt" | "done" | "lastNotifiedFor">) => Promise<void>;
   onClose: () => void;
 }) {
+  const suggestedSite = lastInjectionSite ? nextInjectionSite(lastInjectionSite) : "";
   const [type, setType] = useState<ReminderType>(initial?.type ?? "pharmacie");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? todayISO());
   const [repeat, setRepeat] = useState<string>(
     initial?.repeatDays ? String(initial.repeatDays) : "none",
   );
-  const [injectionSite, setInjectionSite] = useState(initial?.injectionSite ?? "");
+  const [injectionSite, setInjectionSite] = useState(initial?.injectionSite ?? suggestedSite);
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   const submit = async () => {
@@ -102,6 +107,11 @@ function ReminderForm({
             <option key={s} value={s} />
           ))}
         </datalist>
+        {!initial && suggestedSite && (
+          <p className="muted" style={{ marginTop: 2 }}>
+            Suggestion pour alterner : dernière prise à « {lastInjectionSite} ».
+          </p>
+        )}
       </div>
       <div className="field">
         <label>Notes (optionnel)</label>
@@ -117,6 +127,7 @@ function ReminderForm({
 export function RemindersScreen() {
   const { reminders, loading, addReminder, updateReminder, toggleDone, removeReminder, markNotified } =
     useReminders();
+  const { entries: medicationEntries } = useMedications();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Reminder | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Reminder | null>(null);
@@ -218,7 +229,11 @@ export function RemindersScreen() {
 
       {open && (
         <Sheet title="Nouveau rappel" onClose={() => setOpen(false)}>
-          <ReminderForm onSubmit={addReminder} onClose={() => setOpen(false)} />
+          <ReminderForm
+            lastInjectionSite={medicationEntries[0]?.injectionSite}
+            onSubmit={addReminder}
+            onClose={() => setOpen(false)}
+          />
         </Sheet>
       )}
 

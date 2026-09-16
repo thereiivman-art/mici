@@ -16,7 +16,9 @@ export function useMedications() {
     const decrypted = await Promise.all(
       records.map((r) => decryptJSON<MedicationEntry>(key, r.payload)),
     );
-    decrypted.sort((a, b) => b.takenAt.localeCompare(a.takenAt));
+    decrypted.sort(
+      (a, b) => b.takenAt.localeCompare(a.takenAt) || b.createdAt.localeCompare(a.createdAt),
+    );
     setEntries(decrypted);
     setLoading(false);
   }, [key]);

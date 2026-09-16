@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMedications } from "../hooks/useMedications";
 import { INJECTION_SITE_SUGGESTIONS, type MedicationEntry } from "../types";
+import { nextInjectionSite } from "../lib/injectionRotation";
 import { Sheet } from "./Sheet";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { TrashIcon, PencilIcon } from "./Icons";
@@ -32,16 +33,19 @@ function formatTakenAt(iso: string): string {
 
 function MedicationForm({
   initial,
+  lastInjectionSite,
   onSubmit,
   onClose,
 }: {
   initial?: MedicationEntry;
+  lastInjectionSite?: string;
   onSubmit: (e: Omit<MedicationEntry, "id" | "createdAt">) => Promise<void>;
   onClose: () => void;
 }) {
+  const suggestedSite = lastInjectionSite ? nextInjectionSite(lastInjectionSite) : "";
   const [medName, setMedName] = useState(initial?.medName ?? "");
   const [dose, setDose] = useState(initial?.dose ?? "");
-  const [injectionSite, setInjectionSite] = useState(initial?.injectionSite ?? "");
+  const [injectionSite, setInjectionSite] = useState(initial?.injectionSite ?? suggestedSite);
   const [takenAt, setTakenAt] = useState(
     initial ? toLocalDatetimeInput(initial.takenAt) : nowLocalDatetime(),
   );
@@ -100,6 +104,11 @@ function MedicationForm({
             <option key={s} value={s} />
           ))}
         </datalist>
+        {!initial && suggestedSite && (
+          <p className="muted" style={{ marginTop: 2 }}>
+            Suggestion pour alterner : dernière prise à « {lastInjectionSite} ».
+          </p>
+        )}
       </div>
       <div className="field">
         <label>Commentaire (optionnel)</label>
@@ -177,7 +186,11 @@ export function JournalScreen() {
 
       {open && (
         <Sheet title="Nouvelle prise" onClose={() => setOpen(false)}>
-          <MedicationForm onSubmit={addEntry} onClose={() => setOpen(false)} />
+          <MedicationForm
+            lastInjectionSite={entries[0]?.injectionSite}
+            onSubmit={addEntry}
+            onClose={() => setOpen(false)}
+          />
         </Sheet>
       )}
 
