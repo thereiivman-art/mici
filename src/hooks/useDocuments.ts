@@ -53,6 +53,20 @@ export function useDocuments() {
     [key, reload],
   );
 
+  const updateDocumentMeta = useCallback(
+    async (id: string, changes: Pick<DocumentMeta, "name" | "category" | "date" | "notes">) => {
+      if (!key) return;
+      const existing = documents.find((d) => d.id === id);
+      const stored = (await getAllDocuments()).find((d) => d.id === id);
+      if (!existing || !stored) return;
+      const updatedMeta: DocumentMeta = { ...existing, ...changes };
+      const metaPayload = await encryptJSON(key, updatedMeta);
+      await putDocument(packDocument(id, metaPayload, unpackDocumentFile(stored)));
+      await reload();
+    },
+    [key, documents, reload],
+  );
+
   const removeDocument = useCallback(
     async (id: string) => {
       await deleteDocument(id);
@@ -72,5 +86,5 @@ export function useDocuments() {
     [key],
   );
 
-  return { documents, loading, addDocument, removeDocument, openDocument };
+  return { documents, loading, addDocument, updateDocumentMeta, removeDocument, openDocument };
 }

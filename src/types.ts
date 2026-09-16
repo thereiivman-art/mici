@@ -26,6 +26,7 @@ export interface Reminder {
   title: string;
   dueDate: string; // ISO date
   repeatDays: number | null; // null = one-off
+  injectionSite: string; // zone de prise prévue pour la prochaine injection, optionnel
   notes: string;
   done: boolean;
   lastNotifiedFor: string | null; // dueDate value already notified

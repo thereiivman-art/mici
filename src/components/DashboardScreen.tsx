@@ -75,7 +75,10 @@ export function DashboardScreen({ onNavigate }: { onNavigate: (tab: Tab) => void
                 {REMINDER_LABELS[r.type]}
               </span>
               <div style={{ fontWeight: 600, marginTop: 4 }}>{r.title}</div>
-              <div className="muted">{formatDue(r.dueDate)}</div>
+              <div className="muted">
+                {formatDue(r.dueDate)}
+                {r.injectionSite ? ` · ${r.injectionSite}` : ""}
+              </div>
             </div>
           </div>
         ))}

@@ -3,7 +3,7 @@ import { useDocuments } from "../hooks/useDocuments";
 import { DOCUMENT_LABELS, type DocumentCategory, type DocumentMeta } from "../types";
 import { Sheet } from "./Sheet";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { TrashIcon, DownloadIcon, FolderIcon } from "./Icons";
+import { TrashIcon, DownloadIcon, FolderIcon, PencilIcon } from "./Icons";
 
 function formatDate(dateISO: string): string {
   return new Date(dateISO + "T00:00:00").toLocaleDateString("fr-FR", {
@@ -89,13 +89,75 @@ function AddDocumentForm({
   );
 }
 
+function EditDocumentForm({
+  initial,
+  onSubmit,
+  onClose,
+}: {
+  initial: DocumentMeta;
+  onSubmit: (changes: Pick<DocumentMeta, "name" | "category" | "date" | "notes">) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(initial.name);
+  const [category, setCategory] = useState<DocumentCategory>(initial.category);
+  const [date, setDate] = useState(initial.date);
+  const [notes, setNotes] = useState(initial.notes);
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    await onSubmit({ name: name.trim(), category, date, notes: notes.trim() });
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <div>
+      <p className="muted">
+        Le fichier lui-même ({formatSize(initial.size)}) ne peut pas être remplacé ici : supprimez
+        ce document et ajoutez-en un nouveau si besoin.
+      </p>
+      <div className="field">
+        <label>Nom</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      </div>
+      <div className="row">
+        <div className="field">
+          <label>Catégorie</label>
+          <select value={category} onChange={(e) => setCategory(e.target.value as DocumentCategory)}>
+            {Object.entries(DOCUMENT_LABELS).map(([k, label]) => (
+              <option key={k} value={k}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>Date du document</label>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+      </div>
+      <div className="field">
+        <label>Notes (optionnel)</label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="ex. CRP, calprotectine…" />
+      </div>
+      <button className="btn btn-primary btn-block" disabled={!name.trim() || saving} onClick={submit}>
+        Enregistrer les modifications
+      </button>
+    </div>
+  );
+}
+
 function DocumentRow({
   doc,
   onOpen,
+  onEdit,
   onDelete,
 }: {
   doc: DocumentMeta;
   onOpen: (d: DocumentMeta) => void;
+  onEdit: (d: DocumentMeta) => void;
   onDelete: (d: DocumentMeta) => void;
 }) {
   return (
@@ -114,6 +176,9 @@ function DocumentRow({
         <button className="icon-btn" onClick={() => onOpen(doc)} aria-label="Ouvrir">
           <DownloadIcon />
         </button>
+        <button className="icon-btn" onClick={() => onEdit(doc)} aria-label="Modifier">
+          <PencilIcon />
+        </button>
         <button className="icon-btn" onClick={() => onDelete(doc)} aria-label="Supprimer">
           <TrashIcon />
         </button>
@@ -123,8 +188,10 @@ function DocumentRow({
 }
 
 export function DocumentsScreen() {
-  const { documents, loading, addDocument, removeDocument, openDocument } = useDocuments();
+  const { documents, loading, addDocument, updateDocumentMeta, removeDocument, openDocument } =
+    useDocuments();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<DocumentMeta | null>(null);
   const [filter, setFilter] = useState<DocumentCategory | "all">("all");
   const [pendingDelete, setPendingDelete] = useState<DocumentMeta | null>(null);
 
@@ -181,7 +248,13 @@ export function DocumentsScreen() {
       {filtered.length > 0 && (
         <div className="card">
           {filtered.map((d) => (
-            <DocumentRow key={d.id} doc={d} onOpen={handleOpen} onDelete={setPendingDelete} />
+            <DocumentRow
+              key={d.id}
+              doc={d}
+              onOpen={handleOpen}
+              onEdit={setEditing}
+              onDelete={setPendingDelete}
+            />
           ))}
         </div>
       )}
@@ -193,6 +266,16 @@ export function DocumentsScreen() {
       {open && (
         <Sheet title="Nouveau document" onClose={() => setOpen(false)}>
           <AddDocumentForm onAdd={addDocument} onClose={() => setOpen(false)} />
+        </Sheet>
+      )}
+
+      {editing && (
+        <Sheet title="Modifier le document" onClose={() => setEditing(null)}>
+          <EditDocumentForm
+            initial={editing}
+            onSubmit={(changes) => updateDocumentMeta(editing.id, changes)}
+            onClose={() => setEditing(null)}
+          />
         </Sheet>
       )}
 

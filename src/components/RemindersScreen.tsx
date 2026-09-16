@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useReminders } from "../hooks/useReminders";
 import { useReminderNotifications } from "../hooks/useReminderNotifications";
 import { requestPermission, isSupported, isOverdue, isDueSoon } from "../lib/notifications";
-import { REMINDER_LABELS, type Reminder, type ReminderType } from "../types";
+import { INJECTION_SITE_SUGGESTIONS, REMINDER_LABELS, type Reminder, type ReminderType } from "../types";
 import { Sheet } from "./Sheet";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { TrashIcon, CheckIcon, BellIcon, PencilIcon } from "./Icons";
@@ -34,6 +34,7 @@ function ReminderForm({
   const [repeat, setRepeat] = useState<string>(
     initial?.repeatDays ? String(initial.repeatDays) : "none",
   );
+  const [injectionSite, setInjectionSite] = useState(initial?.injectionSite ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   const submit = async () => {
@@ -44,6 +45,7 @@ function ReminderForm({
       title: title.trim(),
       dueDate,
       repeatDays: repeat === "none" ? null : Number(repeat),
+      injectionSite: injectionSite.trim(),
       notes: notes.trim(),
     });
     onClose();
@@ -86,6 +88,20 @@ function ReminderForm({
             <option value="90">Tous les 3 mois</option>
           </select>
         </div>
+      </div>
+      <div className="field">
+        <label>Zone de prise pour la prochaine injection (optionnel)</label>
+        <input
+          list="reminder-injection-sites"
+          value={injectionSite}
+          onChange={(e) => setInjectionSite(e.target.value)}
+          placeholder="ex. Ventre, cuisse gauche…"
+        />
+        <datalist id="reminder-injection-sites">
+          {INJECTION_SITE_SUGGESTIONS.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
       </div>
       <div className="field">
         <label>Notes (optionnel)</label>
@@ -159,6 +175,7 @@ export function RemindersScreen() {
                 <div style={{ fontWeight: 600 }}>{r.title}</div>
                 <div className="muted">
                   {formatDue(r.dueDate)}
+                  {r.injectionSite ? ` · ${r.injectionSite}` : ""}
                   {r.repeatDays ? " · récurrent" : ""}
                 </div>
                 {r.notes && <div style={{ marginTop: 4 }}>{r.notes}</div>}

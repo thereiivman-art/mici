@@ -37,8 +37,12 @@ Limites à connaître pour un usage réel (au-delà du prototype) :
   attaquant ayant un accès technique avancé à l'appareil déverrouillé (ex.
   outils de développement, appareil rooté/jailbreaké) : dans ce cas, la
   robustesse dépend uniquement de la force du code PIN et du coût du PBKDF2.
-- Il n'y a pas de sauvegarde/synchronisation : désinstaller l'app ou vider les
-  données du navigateur supprime définitivement le carnet.
+- Pas de synchronisation automatique entre appareils : chaque appareil a son
+  propre carnet, indépendant. Un export/import manuel (voir Réglages) permet
+  de transférer ou sauvegarder ses données volontairement.
+- Le fichier exporté reste chiffré (même clé dérivée du PIN), mais sans la
+  protection anti brute-force de l'app une fois hors de l'appareil : à
+  conserver en lieu sûr, comme n'importe quel autre secret.
 - Les rappels utilisent l'API de notifications locale du navigateur ; leur
   fiabilité en arrière-plan dépend de l'OS/navigateur (particulièrement
   limité sur iOS). Pour une fiabilité totale, il faudrait un service de
@@ -47,13 +51,19 @@ Limites à connaître pour un usage réel (au-delà du prototype) :
 
 ## Fonctionnalités
 
-- **Carnet de prises** : date/heure, médicament, dose, commentaire libre.
+- **Carnet de prises** : date/heure, médicament, dose, zone de prise
+  (injection), commentaire libre. Modifiable et supprimable (avec
+  confirmation) après coup.
 - **Rappels** : pharmacie, rendez-vous médecin, prise de sang, autre — avec
-  échéance, récurrence optionnelle et notifications locales.
+  échéance, récurrence optionnelle, zone de prise prévue pour la prochaine
+  injection, et notifications locales. Modifiables et supprimables (avec
+  confirmation).
 - **Documents** : ajout de photos/PDF (ordonnances, résumés, résultats
-  d'analyses) chiffrés, classés par catégorie.
+  d'analyses) chiffrés, classés par catégorie. Métadonnées (nom, catégorie,
+  date, notes) modifiables après coup ; suppression avec confirmation.
 - **Réglages** : changement du code PIN, délai de verrouillage automatique,
-  suppression totale des données.
+  export/import d'une sauvegarde chiffrée (protégés par re-saisie du code
+  PIN), suppression totale des données.
 
 ## Développement
 
