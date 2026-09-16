@@ -3,10 +3,17 @@ import { useMedications } from "../hooks/useMedications";
 import { INJECTION_SITE_SUGGESTIONS, type MedicationEntry } from "../types";
 import { Sheet } from "./Sheet";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { TrashIcon } from "./Icons";
+import { TrashIcon, PencilIcon } from "./Icons";
 
 function nowLocalDatetime(): string {
   const d = new Date();
+  d.setSeconds(0, 0);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+
+function toLocalDatetimeInput(iso: string): string {
+  const d = new Date(iso);
   d.setSeconds(0, 0);
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 16);
@@ -23,24 +30,28 @@ function formatTakenAt(iso: string): string {
   });
 }
 
-function AddMedicationForm({
-  onAdd,
+function MedicationForm({
+  initial,
+  onSubmit,
   onClose,
 }: {
-  onAdd: (e: Omit<MedicationEntry, "id" | "createdAt">) => Promise<void>;
+  initial?: MedicationEntry;
+  onSubmit: (e: Omit<MedicationEntry, "id" | "createdAt">) => Promise<void>;
   onClose: () => void;
 }) {
-  const [medName, setMedName] = useState("");
-  const [dose, setDose] = useState("");
-  const [injectionSite, setInjectionSite] = useState("");
-  const [takenAt, setTakenAt] = useState(nowLocalDatetime());
-  const [comment, setComment] = useState("");
+  const [medName, setMedName] = useState(initial?.medName ?? "");
+  const [dose, setDose] = useState(initial?.dose ?? "");
+  const [injectionSite, setInjectionSite] = useState(initial?.injectionSite ?? "");
+  const [takenAt, setTakenAt] = useState(
+    initial ? toLocalDatetimeInput(initial.takenAt) : nowLocalDatetime(),
+  );
+  const [comment, setComment] = useState(initial?.comment ?? "");
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
     if (!medName.trim()) return;
     setSaving(true);
-    await onAdd({
+    await onSubmit({
       medName: medName.trim(),
       dose: dose.trim(),
       injectionSite: injectionSite.trim(),
@@ -99,15 +110,16 @@ function AddMedicationForm({
         />
       </div>
       <button className="btn btn-primary btn-block" disabled={!medName.trim() || saving} onClick={submit}>
-        Enregistrer la prise
+        {initial ? "Enregistrer les modifications" : "Enregistrer la prise"}
       </button>
     </div>
   );
 }
 
 export function JournalScreen() {
-  const { entries, loading, addEntry, removeEntry } = useMedications();
+  const { entries, loading, addEntry, updateEntry, removeEntry } = useMedications();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<MedicationEntry | null>(null);
   const [pendingDelete, setPendingDelete] = useState<MedicationEntry | null>(null);
 
   const confirmDelete = async () => {
@@ -142,13 +154,18 @@ export function JournalScreen() {
                 </div>
                 {e.comment && <div style={{ marginTop: 4 }}>{e.comment}</div>}
               </div>
-              <button
-                className="icon-btn"
-                onClick={() => setPendingDelete(e)}
-                aria-label="Supprimer"
-              >
-                <TrashIcon />
-              </button>
+              <div style={{ display: "flex", gap: 4 }}>
+                <button className="icon-btn" onClick={() => setEditing(e)} aria-label="Modifier">
+                  <PencilIcon />
+                </button>
+                <button
+                  className="icon-btn"
+                  onClick={() => setPendingDelete(e)}
+                  aria-label="Supprimer"
+                >
+                  <TrashIcon />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -160,7 +177,17 @@ export function JournalScreen() {
 
       {open && (
         <Sheet title="Nouvelle prise" onClose={() => setOpen(false)}>
-          <AddMedicationForm onAdd={addEntry} onClose={() => setOpen(false)} />
+          <MedicationForm onSubmit={addEntry} onClose={() => setOpen(false)} />
+        </Sheet>
+      )}
+
+      {editing && (
+        <Sheet title="Modifier la prise" onClose={() => setEditing(null)}>
+          <MedicationForm
+            initial={editing}
+            onSubmit={(e) => updateEntry(editing.id, e)}
+            onClose={() => setEditing(null)}
+          />
         </Sheet>
       )}
 

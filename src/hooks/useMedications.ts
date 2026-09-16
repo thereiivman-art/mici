@@ -40,6 +40,19 @@ export function useMedications() {
     [key, reload],
   );
 
+  const updateEntry = useCallback(
+    async (id: string, entry: Omit<MedicationEntry, "id" | "createdAt">) => {
+      if (!key) return;
+      const existing = entries.find((e) => e.id === id);
+      if (!existing) return;
+      const full: MedicationEntry = { ...existing, ...entry };
+      const payload = await encryptJSON(key, full);
+      await putRecord("medications", id, payload);
+      await reload();
+    },
+    [key, entries, reload],
+  );
+
   const removeEntry = useCallback(
     async (id: string) => {
       await deleteRecord("medications", id);
@@ -48,5 +61,5 @@ export function useMedications() {
     [reload],
   );
 
-  return { entries, loading, addEntry, removeEntry };
+  return { entries, loading, addEntry, updateEntry, removeEntry };
 }
