@@ -7,7 +7,7 @@ import { INJECTION_SITE_SUGGESTIONS, REMINDER_LABELS, type Reminder, type Remind
 import { nextInjectionSite } from "../lib/injectionRotation";
 import { Sheet } from "./Sheet";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { TrashIcon, CheckIcon, BellIcon, PencilIcon } from "./Icons";
+import { TrashIcon, CheckIcon, BellIcon, PencilIcon, ExternalLinkIcon } from "./Icons";
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -19,6 +19,12 @@ function formatDue(dateISO: string): string {
     day: "2-digit",
     month: "short",
   });
+}
+
+function normalizeUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
 function ReminderForm({
@@ -44,6 +50,7 @@ function ReminderForm({
   const [injectionSite, setInjectionSite] = useState(
     initial?.injectionSite ?? (alternate ? suggestedSite : ""),
   );
+  const [link, setLink] = useState(initial?.link ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   const handleAlternateToggle = (checked: boolean) => {
@@ -60,6 +67,7 @@ function ReminderForm({
       dueDate,
       repeatDays: repeat === "none" ? null : Number(repeat),
       injectionSite: injectionSite.trim(),
+      link: link.trim(),
       notes: notes.trim(),
     });
     onClose();
@@ -85,6 +93,19 @@ function ReminderForm({
           placeholder="ex. Retirer Infliximab, RDV Dr Martin…"
           autoFocus
         />
+      </div>
+      <div className="field">
+        <label>Lien de prise de rendez-vous (optionnel)</label>
+        <input
+          type="url"
+          inputMode="url"
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="ex. doctolib.fr/… ou site de l'hôpital"
+        />
+        <p className="muted" style={{ marginTop: 4 }}>
+          Fiche Doctolib du médecin, site de réservation de l'hôpital, etc.
+        </p>
       </div>
       <div className="row">
         <div className="field">
@@ -217,6 +238,25 @@ export function RemindersScreen() {
                   {r.repeatDays ? " · récurrent" : ""}
                 </div>
                 {r.notes && <div style={{ marginTop: 4 }}>{r.notes}</div>}
+                {r.link && (
+                  <a
+                    href={normalizeUrl(r.link)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      marginTop: 6,
+                      color: "var(--primary)",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <ExternalLinkIcon />
+                    Prendre rendez-vous
+                  </a>
+                )}
               </div>
               <div style={{ display: "flex", gap: 4 }}>
                 <button className="icon-btn" onClick={() => toggleDone(r)} aria-label="Marquer comme fait">

@@ -60,8 +60,9 @@ Limites à connaître pour un usage réel (au-delà du prototype) :
 - **Rappels** : pharmacie, rendez-vous médecin, prise de sang, autre — avec
   échéance, récurrence optionnelle, zone de prise prévue pour la prochaine
   injection (même case à cocher d'alternance, basée sur la dernière prise
-  réellement enregistrée), et notifications locales. Modifiables et
-  supprimables (avec confirmation).
+  réellement enregistrée), un lien optionnel vers la prise de rendez-vous
+  (fiche Doctolib du médecin, site de réservation de l'hôpital…), et
+  notifications locales. Modifiables et supprimables (avec confirmation).
 - **Documents** : ajout de photos/PDF (ordonnances, résumés, résultats
   d'analyses) chiffrés, classés par catégorie. Métadonnées (nom, catégorie,
   date, notes) modifiables après coup ; suppression avec confirmation.

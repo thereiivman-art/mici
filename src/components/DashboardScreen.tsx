@@ -3,7 +3,14 @@ import { useReminders } from "../hooks/useReminders";
 import { useDocuments } from "../hooks/useDocuments";
 import { REMINDER_LABELS } from "../types";
 import { isOverdue, isDueSoon } from "../lib/notifications";
+import { ExternalLinkIcon } from "./Icons";
 import type { Tab } from "../App";
+
+function normalizeUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
 
 function formatTakenAt(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", {
@@ -80,6 +87,26 @@ export function DashboardScreen({ onNavigate }: { onNavigate: (tab: Tab) => void
                 {formatDue(r.dueDate)}
                 {r.injectionSite ? ` · ${r.injectionSite}` : ""}
               </div>
+              {r.link && (
+                <a
+                  href={normalizeUrl(r.link)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    marginTop: 4,
+                    color: "var(--primary)",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <ExternalLinkIcon />
+                  Prendre rendez-vous
+                </a>
+              )}
             </div>
           </div>
         ))}
