@@ -33,14 +33,23 @@ function ReminderForm({
   onClose: () => void;
 }) {
   const suggestedSite = lastInjectionSite ? nextInjectionSite(lastInjectionSite) : "";
+  const canAlternate = !!lastInjectionSite && suggestedSite !== lastInjectionSite;
+  const [alternate, setAlternate] = useState(canAlternate && !initial);
   const [type, setType] = useState<ReminderType>(initial?.type ?? "pharmacie");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? todayISO());
   const [repeat, setRepeat] = useState<string>(
     initial?.repeatDays ? String(initial.repeatDays) : "none",
   );
-  const [injectionSite, setInjectionSite] = useState(initial?.injectionSite ?? suggestedSite);
+  const [injectionSite, setInjectionSite] = useState(
+    initial?.injectionSite ?? (alternate ? suggestedSite : ""),
+  );
   const [notes, setNotes] = useState(initial?.notes ?? "");
+
+  const handleAlternateToggle = (checked: boolean) => {
+    setAlternate(checked);
+    setInjectionSite(checked ? suggestedSite : "");
+  };
 
   const submit = async () => {
     if (!title.trim()) return;
@@ -96,6 +105,34 @@ function ReminderForm({
       </div>
       <div className="field">
         <label>Zone de prise pour la prochaine injection (optionnel)</label>
+        {canAlternate && (
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontWeight: 400,
+              fontSize: "0.9rem",
+              marginBottom: 8,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={alternate}
+              onChange={(e) => handleAlternateToggle(e.target.checked)}
+            />
+            Alterner les zones de prise (gauche / droite)
+          </label>
+        )}
+        {canAlternate && alternate && (
+          <div
+            className="banner"
+            style={{ background: "var(--ok-bg)", color: "var(--primary-strong)", marginBottom: 8 }}
+          >
+            Dernière prise : <strong>{lastInjectionSite}</strong> → Prochaine prise :{" "}
+            <strong>{suggestedSite}</strong>
+          </div>
+        )}
         <input
           list="reminder-injection-sites"
           value={injectionSite}
@@ -107,9 +144,10 @@ function ReminderForm({
             <option key={s} value={s} />
           ))}
         </datalist>
-        {!initial && suggestedSite && (
-          <p className="muted" style={{ marginTop: 2 }}>
-            Suggestion pour alterner : dernière prise à « {lastInjectionSite} ».
+        {canAlternate && (
+          <p className="muted" style={{ marginTop: 4 }}>
+            Chaque nouvelle prise alterne par rapport à la précédente (ex. toutes les 2 semaines :
+            gauche → droite → gauche…). Décochez pour choisir librement.
           </p>
         )}
       </div>
@@ -241,6 +279,7 @@ export function RemindersScreen() {
         <Sheet title="Modifier le rappel" onClose={() => setEditing(null)}>
           <ReminderForm
             initial={editing}
+            lastInjectionSite={medicationEntries[0]?.injectionSite}
             onSubmit={(r) => updateReminder(editing.id, r)}
             onClose={() => setEditing(null)}
           />

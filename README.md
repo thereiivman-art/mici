@@ -53,14 +53,15 @@ Limites à connaître pour un usage réel (au-delà du prototype) :
 
 - **Carnet de prises** : date/heure, médicament, dose, zone de prise
   (injection), commentaire libre. Modifiable et supprimable (avec
-  confirmation) après coup. La zone de prise suivante est suggérée
-  automatiquement en alternant gauche/droite par rapport à la dernière
-  prise enregistrée (ex. cuisse gauche → cuisse droite → cuisse gauche…),
-  toujours modifiable.
+  confirmation) après coup. Une case à cocher « Alterner les zones de prise »
+  affiche explicitement « Dernière prise : X → Prochaine prise : Y » et
+  pré-remplit la zone en alternant gauche/droite (ex. cuisse gauche → cuisse
+  droite → cuisse gauche…) ; décochable pour saisir librement.
 - **Rappels** : pharmacie, rendez-vous médecin, prise de sang, autre — avec
   échéance, récurrence optionnelle, zone de prise prévue pour la prochaine
-  injection (suggérée par la même rotation), et notifications locales.
-  Modifiables et supprimables (avec confirmation).
+  injection (même case à cocher d'alternance, basée sur la dernière prise
+  réellement enregistrée), et notifications locales. Modifiables et
+  supprimables (avec confirmation).
 - **Documents** : ajout de photos/PDF (ordonnances, résumés, résultats
   d'analyses) chiffrés, classés par catégorie. Métadonnées (nom, catégorie,
   date, notes) modifiables après coup ; suppression avec confirmation.

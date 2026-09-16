@@ -43,14 +43,23 @@ function MedicationForm({
   onClose: () => void;
 }) {
   const suggestedSite = lastInjectionSite ? nextInjectionSite(lastInjectionSite) : "";
+  const canAlternate = !!lastInjectionSite && suggestedSite !== lastInjectionSite;
+  const [alternate, setAlternate] = useState(canAlternate && !initial);
   const [medName, setMedName] = useState(initial?.medName ?? "");
   const [dose, setDose] = useState(initial?.dose ?? "");
-  const [injectionSite, setInjectionSite] = useState(initial?.injectionSite ?? suggestedSite);
+  const [injectionSite, setInjectionSite] = useState(
+    initial?.injectionSite ?? (alternate ? suggestedSite : ""),
+  );
   const [takenAt, setTakenAt] = useState(
     initial ? toLocalDatetimeInput(initial.takenAt) : nowLocalDatetime(),
   );
   const [comment, setComment] = useState(initial?.comment ?? "");
   const [saving, setSaving] = useState(false);
+
+  const handleAlternateToggle = (checked: boolean) => {
+    setAlternate(checked);
+    setInjectionSite(checked ? suggestedSite : "");
+  };
 
   const submit = async () => {
     if (!medName.trim()) return;
@@ -93,6 +102,34 @@ function MedicationForm({
       </div>
       <div className="field">
         <label>Zone de prise (optionnel)</label>
+        {canAlternate && (
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontWeight: 400,
+              fontSize: "0.9rem",
+              marginBottom: 8,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={alternate}
+              onChange={(e) => handleAlternateToggle(e.target.checked)}
+            />
+            Alterner les zones de prise (gauche / droite)
+          </label>
+        )}
+        {canAlternate && alternate && (
+          <div
+            className="banner"
+            style={{ background: "var(--ok-bg)", color: "var(--primary-strong)", marginBottom: 8 }}
+          >
+            Dernière prise : <strong>{lastInjectionSite}</strong> → Prochaine prise :{" "}
+            <strong>{suggestedSite}</strong>
+          </div>
+        )}
         <input
           list="injection-sites"
           value={injectionSite}
@@ -104,9 +141,10 @@ function MedicationForm({
             <option key={s} value={s} />
           ))}
         </datalist>
-        {!initial && suggestedSite && (
-          <p className="muted" style={{ marginTop: 2 }}>
-            Suggestion pour alterner : dernière prise à « {lastInjectionSite} ».
+        {canAlternate && (
+          <p className="muted" style={{ marginTop: 4 }}>
+            Chaque nouvelle prise alterne par rapport à la précédente (ex. toutes les 2 semaines :
+            gauche → droite → gauche…). Décochez pour choisir librement.
           </p>
         )}
       </div>
@@ -136,6 +174,9 @@ export function JournalScreen() {
     await removeEntry(pendingDelete.id);
     setPendingDelete(null);
   };
+
+  const editingIndex = editing ? entries.findIndex((e) => e.id === editing.id) : -1;
+  const previousEntryForEditing = editingIndex >= 0 ? entries[editingIndex + 1] : undefined;
 
   return (
     <div className="screen">
@@ -198,6 +239,7 @@ export function JournalScreen() {
         <Sheet title="Modifier la prise" onClose={() => setEditing(null)}>
           <MedicationForm
             initial={editing}
+            lastInjectionSite={previousEntryForEditing?.injectionSite}
             onSubmit={(e) => updateEntry(editing.id, e)}
             onClose={() => setEditing(null)}
           />
