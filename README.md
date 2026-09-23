@@ -63,6 +63,10 @@ Limites à connaître pour un usage réel (au-delà du prototype) :
   réellement enregistrée), un lien optionnel vers la prise de rendez-vous
   (fiche Doctolib du médecin, site de réservation de l'hôpital…), et
   notifications locales. Modifiables et supprimables (avec confirmation).
+  Valider un rappel qui a une zone de prise renseignée enregistre
+  automatiquement une prise correspondante dans le carnet (une confirmation
+  s'affiche) ; les rappels sans zone de prise (RDV, pharmacie…) ne créent
+  rien automatiquement.
 - **Documents** : ajout de photos/PDF (ordonnances, résumés, résultats
   d'analyses) chiffrés, classés par catégorie. Métadonnées (nom, catégorie,
   date, notes) modifiables après coup ; suppression avec confirmation.

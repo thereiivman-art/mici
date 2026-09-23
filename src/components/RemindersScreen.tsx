@@ -126,6 +126,9 @@ function ReminderForm({
       </div>
       <div className="field">
         <label>Zone de prise pour la prochaine injection (optionnel)</label>
+        <p className="muted" style={{ marginTop: -4, marginBottom: 8 }}>
+          Si renseignée, valider ce rappel enregistrera automatiquement une prise dans le carnet.
+        </p>
         {canAlternate && (
           <label className="alternate-toggle">
             <input
@@ -175,10 +178,11 @@ function ReminderForm({
 export function RemindersScreen() {
   const { reminders, loading, addReminder, updateReminder, toggleDone, removeReminder, markNotified } =
     useReminders();
-  const { entries: medicationEntries } = useMedications();
+  const { entries: medicationEntries, addEntry } = useMedications();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Reminder | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Reminder | null>(null);
+  const [autoLoggedFor, setAutoLoggedFor] = useState<string | null>(null);
   useReminderNotifications(reminders, markNotified);
 
   const active = reminders.filter((r) => !r.done);
@@ -190,6 +194,21 @@ export function RemindersScreen() {
     setPendingDelete(null);
   };
 
+  const handleValidate = async (r: Reminder) => {
+    if (!r.done && r.injectionSite) {
+      await addEntry({
+        medName: r.title,
+        dose: "",
+        injectionSite: r.injectionSite,
+        takenAt: new Date().toISOString(),
+        comment: "",
+      });
+      setAutoLoggedFor(r.title);
+      setTimeout(() => setAutoLoggedFor(null), 3000);
+    }
+    await toggleDone(r);
+  };
+
   const notifPermission = isSupported() ? Notification.permission : "unsupported";
 
   return (
@@ -197,6 +216,12 @@ export function RemindersScreen() {
       <div className="topbar">
         <h1>Rappels</h1>
       </div>
+
+      {autoLoggedFor && (
+        <div className="banner" style={{ background: "var(--ok-bg)", color: "var(--primary-strong)" }}>
+          Prise « {autoLoggedFor} » enregistrée automatiquement dans le carnet.
+        </div>
+      )}
 
       {notifPermission === "default" && (
         <div className="banner">
@@ -259,7 +284,7 @@ export function RemindersScreen() {
                 )}
               </div>
               <div style={{ display: "flex", gap: 4 }}>
-                <button className="icon-btn" onClick={() => toggleDone(r)} aria-label="Marquer comme fait">
+                <button className="icon-btn" onClick={() => handleValidate(r)} aria-label="Marquer comme fait">
                   <CheckIcon />
                 </button>
                 <button className="icon-btn" onClick={() => setEditing(r)} aria-label="Modifier">
