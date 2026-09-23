@@ -42,6 +42,29 @@ export function useMedications() {
     [key, reload],
   );
 
+  const addEntries = useCallback(
+    async (newEntries: Omit<MedicationEntry, "id" | "createdAt">[]) => {
+      if (!key) return;
+      const baseTime = Date.now();
+      await Promise.all(
+        newEntries.map(async (entry, i) => {
+          const full: MedicationEntry = {
+            ...entry,
+            id: crypto.randomUUID(),
+            // décalage d'1 ms par ligne pour garder un ordre stable au tri
+            // (departage par createdAt) quand plusieurs lignes importées
+            // partagent la même minute de takenAt.
+            createdAt: new Date(baseTime + i).toISOString(),
+          };
+          const payload = await encryptJSON(key, full);
+          await putRecord("medications", full.id, payload);
+        }),
+      );
+      await reload();
+    },
+    [key, reload],
+  );
+
   const updateEntry = useCallback(
     async (id: string, entry: Omit<MedicationEntry, "id" | "createdAt">) => {
       if (!key) return;
@@ -63,5 +86,5 @@ export function useMedications() {
     [reload],
   );
 
-  return { entries, loading, addEntry, updateEntry, removeEntry };
+  return { entries, loading, addEntry, addEntries, updateEntry, removeEntry };
 }

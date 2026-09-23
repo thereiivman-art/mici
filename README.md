@@ -56,7 +56,10 @@ Limites à connaître pour un usage réel (au-delà du prototype) :
   confirmation) après coup. Une case à cocher « Alterner les zones de prise »
   affiche explicitement « Dernière prise : X → Prochaine prise : Y » et
   pré-remplit la zone en alternant gauche/droite (ex. cuisse gauche → cuisse
-  droite → cuisse gauche…) ; décochable pour saisir librement.
+  droite → cuisse gauche…) ; décochable pour saisir librement. Un import en
+  masse (coller du texte ou charger un fichier CSV/texte) permet d'ajouter
+  rapidement un historique complet, avec aperçu et signalement des lignes
+  mal formées avant validation.
 - **Rappels** : pharmacie, rendez-vous médecin, prise de sang, autre — avec
   échéance, récurrence optionnelle, zone de prise prévue pour la prochaine
   injection (même case à cocher d'alternance, basée sur la dernière prise

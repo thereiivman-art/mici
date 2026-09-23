@@ -4,7 +4,8 @@ import { INJECTION_SITE_SUGGESTIONS, type MedicationEntry } from "../types";
 import { nextInjectionSite } from "../lib/injectionRotation";
 import { Sheet } from "./Sheet";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { TrashIcon, PencilIcon } from "./Icons";
+import { BulkImportSheet } from "./BulkImportSheet";
+import { TrashIcon, PencilIcon, UploadIcon } from "./Icons";
 
 function nowLocalDatetime(): string {
   const d = new Date();
@@ -153,8 +154,9 @@ function MedicationForm({
 }
 
 export function JournalScreen() {
-  const { entries, loading, addEntry, updateEntry, removeEntry } = useMedications();
+  const { entries, loading, addEntry, addEntries, updateEntry, removeEntry } = useMedications();
   const [open, setOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editing, setEditing] = useState<MedicationEntry | null>(null);
   const [pendingDelete, setPendingDelete] = useState<MedicationEntry | null>(null);
 
@@ -171,12 +173,31 @@ export function JournalScreen() {
     <div className="screen">
       <div className="topbar">
         <h1>Carnet de prises</h1>
+        <button className="icon-btn" onClick={() => setBulkOpen(true)} aria-label="Importer en masse">
+          <UploadIcon />
+        </button>
       </div>
 
       {!loading && entries.length === 0 && (
         <div className="empty-state">
           <p>Aucune prise enregistrée pour le moment.</p>
-          <p className="muted">Touchez le bouton + pour ajouter votre première prise.</p>
+          <p className="muted">
+            Touchez le bouton + pour ajouter votre première prise, ou{" "}
+            <button
+              onClick={() => setBulkOpen(true)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--primary)",
+                fontWeight: 600,
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              importez votre historique en masse
+            </button>
+            .
+          </p>
         </div>
       )}
 
@@ -234,6 +255,8 @@ export function JournalScreen() {
           />
         </Sheet>
       )}
+
+      {bulkOpen && <BulkImportSheet onImport={addEntries} onClose={() => setBulkOpen(false)} />}
 
       {pendingDelete && (
         <ConfirmDialog
