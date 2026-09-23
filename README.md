@@ -22,7 +22,8 @@ Les données de santé sont sensibles. Ce prototype adopte donc une approche
   déverrouillée.
 - Un écran de verrouillage par code PIN (6 chiffres) protège l'accès. L'app se
   reverrouille automatiquement après une période d'inactivité configurable
-  (réglages).
+  (réglages). Le code se saisit au pavé tactile ou directement au clavier
+  physique (pratique sur PC).
 - Sans le code PIN, les données stockées sont illisibles (bruit chiffré).
 - **Anti brute-force** : après 5 codes PIN incorrects consécutifs, la saisie
   est bloquée un moment, avec un délai qui double à chaque nouvel échec (30 s,

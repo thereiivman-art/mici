@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useVault } from "../lib/VaultContext";
 
 const PIN_LENGTH = 6;
@@ -79,44 +79,82 @@ export function PinScreen() {
   }, [lockedUntil]);
 
   const isLocked = remainingSeconds > 0;
+  const isLockedRef = useRef(isLocked);
+  isLockedRef.current = isLocked;
 
-  const handleDigit = async (d: string) => {
-    if (isLocked || pin.length >= PIN_LENGTH) return;
-    const next = pin + d;
-    setPin(next);
+  // setPin utilise toujours un updater fonctionnel : même si plusieurs
+  // frappes arrivent très rapprochées (clavier physique tapé vite, ou
+  // événements synthétiques envoyés sans délai), chaque appel part de la
+  // valeur réellement la plus récente gérée par React, sans jamais perdre
+  // de chiffre à cause d'une closure périmée sur `pin`.
+  const handleDigit = (d: string) => {
+    if (isLockedRef.current) return;
+    setPin((prev) => (prev.length >= PIN_LENGTH ? prev : prev + d));
     setError(false);
-    if (next.length === PIN_LENGTH) {
+  };
+
+  const handleDelete = () => {
+    if (isLockedRef.current) return;
+    setPin((prev) => prev.slice(0, -1));
+    setError(false);
+  };
+
+  // La logique "code complet" réagit à `pin` via un effet plutôt que d'être
+  // calculée en ligne dans handleDigit, pour toujours partir de la valeur de
+  // pin réellement commitée par React.
+  useEffect(() => {
+    if (pin.length !== PIN_LENGTH) return;
+    let cancelled = false;
+    (async () => {
       if (!hasPin) {
         if (step === "create") {
-          setFirstPin(next);
+          setFirstPin(pin);
           setStep("confirm");
-        } else {
-          if (next === firstPin) {
-            await setupPin(next);
-          } else {
-            setError(true);
-            setMessage("Les codes ne correspondent pas. Réessayez.");
-            setStep("create");
-            setFirstPin("");
-            setTimeout(() => setPin(""), 300);
-          }
+        } else if (pin === firstPin) {
+          await setupPin(pin);
+        } else if (!cancelled) {
+          setError(true);
+          setMessage("Les codes ne correspondent pas. Réessayez.");
+          setStep("create");
+          setFirstPin("");
+          setTimeout(() => setPin(""), 300);
         }
       } else {
-        const ok = await unlock(next);
-        if (!ok) {
+        const ok = await unlock(pin);
+        if (!ok && !cancelled) {
           setError(true);
           setMessage("Code incorrect.");
           setTimeout(() => setPin(""), 300);
         }
       }
-    }
-  };
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pin]);
 
-  const handleDelete = () => {
-    if (isLocked) return;
-    setPin((p) => p.slice(0, -1));
-    setError(false);
-  };
+  // Permet de saisir le code avec le clavier physique (utile sur PC), en plus
+  // du pavé tactile.
+  const handleDigitRef = useRef(handleDigit);
+  handleDigitRef.current = handleDigit;
+  const handleDeleteRef = useRef(handleDelete);
+  handleDeleteRef.current = handleDelete;
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        handleDigitRef.current(e.key);
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        handleDeleteRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const title = !hasPin
     ? step === "create"
