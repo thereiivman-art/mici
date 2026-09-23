@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { BULK_IMPORT_EXAMPLE, parseBulkText, type BulkParseResult } from "../lib/bulkImport";
 import type { MedicationEntry } from "../types";
 import { Sheet } from "./Sheet";
@@ -13,18 +13,41 @@ function formatTakenAt(iso: string): string {
   });
 }
 
+function duplicateKey(medName: string, takenAt: string): string {
+  return `${medName.trim().toLowerCase()}|${takenAt}`;
+}
+
 export function BulkImportSheet({
+  existingEntries,
   onImport,
   onClose,
 }: {
+  existingEntries: MedicationEntry[];
   onImport: (entries: Omit<MedicationEntry, "id" | "createdAt">[]) => Promise<void>;
   onClose: () => void;
 }) {
   const [text, setText] = useState("");
   const [result, setResult] = useState<BulkParseResult | null>(null);
+  const [includeDuplicates, setIncludeDuplicates] = useState(false);
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const existingKeys = useMemo(
+    () => new Set(existingEntries.map((e) => duplicateKey(e.medName, e.takenAt))),
+    [existingEntries],
+  );
+
+  const flagged = useMemo(() => {
+    if (!result) return [];
+    return result.entries.map((e) => ({
+      ...e,
+      isDuplicate: existingKeys.has(duplicateKey(e.entry.medName, e.entry.takenAt)),
+    }));
+  }, [result, existingKeys]);
+
+  const duplicateCount = flagged.filter((e) => e.isDuplicate).length;
+  const toImport = includeDuplicates ? flagged : flagged.filter((e) => !e.isDuplicate);
 
   const analyze = () => setResult(parseBulkText(text));
 
@@ -35,11 +58,11 @@ export function BulkImportSheet({
   };
 
   const importAll = async () => {
-    if (!result || result.entries.length === 0) return;
+    if (toImport.length === 0) return;
     setImporting(true);
-    await onImport(result.entries.map((e) => e.entry));
+    await onImport(toImport.map((e) => e.entry));
     setImporting(false);
-    setImported(result.entries.length);
+    setImported(toImport.length);
   };
 
   if (imported > 0) {
@@ -59,8 +82,11 @@ export function BulkImportSheet({
     <Sheet title="Import en masse" onClose={onClose}>
       <p className="muted">
         Collez votre historique (une prise par ligne) ou importez un fichier CSV/texte exporté
-        depuis un tableur. Format : <code>date;heure;médicament;dose;zone;commentaire</code> —
-        seules la date et le médicament sont obligatoires, le reste est optionnel.
+        depuis un tableur. Fonctionne même si votre carnet contient déjà des prises — les lignes
+        qui correspondent à une prise déjà enregistrée (même médicament, même date/heure) sont
+        détectées et écartées par défaut pour éviter les doublons. Format :{" "}
+        <code>date;heure;médicament;dose;zone;commentaire</code> — seules la date et le médicament
+        sont obligatoires, le reste est optionnel.
       </p>
       <div className="field">
         <label>Fichier CSV ou texte (optionnel)</label>
@@ -114,17 +140,37 @@ export function BulkImportSheet({
           >
             {result.entries.length} prise{result.entries.length > 1 ? "s" : ""} reconnue
             {result.entries.length > 1 ? "s" : ""}
+            {duplicateCount > 0
+              ? ` · ${duplicateCount} déjà existante${duplicateCount > 1 ? "s" : ""}`
+              : ""}
             {result.errors.length > 0
               ? ` · ${result.errors.length} ligne${result.errors.length > 1 ? "s" : ""} ignorée${result.errors.length > 1 ? "s" : ""}`
               : ""}
           </div>
 
-          {result.entries.length > 0 && (
+          {duplicateCount > 0 && (
+            <label className="alternate-toggle">
+              <input
+                type="checkbox"
+                checked={includeDuplicates}
+                onChange={(e) => setIncludeDuplicates(e.target.checked)}
+              />
+              <span>
+                Importer aussi les {duplicateCount} prise{duplicateCount > 1 ? "s" : ""} déjà
+                existante{duplicateCount > 1 ? "s" : ""} (créera des doublons)
+              </span>
+            </label>
+          )}
+
+          {flagged.length > 0 && (
             <div className="card" style={{ maxHeight: 240, overflowY: "auto" }}>
-              {result.entries.slice(0, 25).map((e) => (
+              {flagged.slice(0, 25).map((e) => (
                 <div className="list-item" key={e.line}>
                   <div>
-                    <div style={{ fontWeight: 600 }}>{e.entry.medName}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontWeight: 600 }}>{e.entry.medName}</span>
+                      {e.isDuplicate && <span className="pill warning">Déjà existante</span>}
+                    </div>
                     <div className="muted">
                       {formatTakenAt(e.entry.takenAt)}
                       {e.entry.dose ? ` · ${e.entry.dose}` : ""}
@@ -133,9 +179,9 @@ export function BulkImportSheet({
                   </div>
                 </div>
               ))}
-              {result.entries.length > 25 && (
+              {flagged.length > 25 && (
                 <p className="muted" style={{ padding: "8px 0 0" }}>
-                  … et {result.entries.length - 25} de plus.
+                  … et {flagged.length - 25} de plus.
                 </p>
               )}
             </div>
@@ -160,10 +206,10 @@ export function BulkImportSheet({
             </button>
             <button
               className="btn btn-primary"
-              disabled={result.entries.length === 0 || importing}
+              disabled={toImport.length === 0 || importing}
               onClick={importAll}
             >
-              Importer {result.entries.length} prise{result.entries.length > 1 ? "s" : ""}
+              Importer {toImport.length} prise{toImport.length > 1 ? "s" : ""}
             </button>
           </div>
         </div>

@@ -256,7 +256,13 @@ export function JournalScreen() {
         </Sheet>
       )}
 
-      {bulkOpen && <BulkImportSheet onImport={addEntries} onClose={() => setBulkOpen(false)} />}
+      {bulkOpen && (
+        <BulkImportSheet
+          existingEntries={entries}
+          onImport={addEntries}
+          onClose={() => setBulkOpen(false)}
+        />
+      )}
 
       {pendingDelete && (
         <ConfirmDialog

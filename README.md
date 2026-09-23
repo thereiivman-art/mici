@@ -59,7 +59,11 @@ Limites à connaître pour un usage réel (au-delà du prototype) :
   droite → cuisse gauche…) ; décochable pour saisir librement. Un import en
   masse (coller du texte ou charger un fichier CSV/texte) permet d'ajouter
   rapidement un historique complet, avec aperçu et signalement des lignes
-  mal formées avant validation.
+  mal formées avant validation. Fonctionne aussi bien sur un carnet vide que
+  déjà rempli : les lignes correspondant à une prise déjà enregistrée (même
+  médicament, même date/heure) sont détectées et exclues de l'import par
+  défaut, pour permettre de réimporter le même fichier sans créer de
+  doublons — une case à cocher permet de les inclure quand même si besoin.
 - **Rappels** : pharmacie, rendez-vous médecin, prise de sang, autre — avec
   échéance, récurrence optionnelle, zone de prise prévue pour la prochaine
   injection (même case à cocher d'alternance, basée sur la dernière prise
